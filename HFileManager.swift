@@ -103,7 +103,7 @@ class HFileManager {
         let path = getFilePath(fileName: fileName)
         if !checkFileExist(fileName: fileName) {
             print("File does not exist create new file")
-            fileManager.createFile(atPath: fileName, contents: input.data(using: String.Encoding.utf8), attributes: nil)
+            fileManager.createFile(atPath: path, contents: input.data(using: String.Encoding.utf8), attributes: nil)
             return true
         }
         let file: FileHandle? = FileHandle(forWritingAtPath: path)
