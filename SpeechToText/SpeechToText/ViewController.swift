@@ -36,12 +36,12 @@ class ViewController: UIViewController {
         let button = UIButton()
         button.setImage(#imageLiteral(resourceName: "add_icon"), for: .normal)
         button.addTarget(self, action: #selector(showRecoderView), for: .touchUpInside)
-        button.backgroundColor = UIColor.red
-        button.layer.masksToBounds = false
         button.layer.cornerRadius = CGFloat(Constants.AddButtonHeight / 2)
-        button.backgroundColor = UIColor.clear
-        button.layer.shadowColor = UIColor.black.withAlphaComponent(0.25).cgColor
-        button.layer.shadowOffset = CGSize.init(width: 0, height: 2.0)
+        button.layer.masksToBounds = false;
+        button.layer.shadowColor = UIColor.black.cgColor;
+        button.layer.shadowOpacity = 0.45;
+        button.layer.shadowRadius = CGFloat(10);
+        button.layer.shadowOffset = CGSize(width: 2, height: 2)
         return button
     }()
     
@@ -199,7 +199,7 @@ class ViewController: UIViewController {
     func saveData() {
         var contents = ""
         
-        if listTask.count > 1 {
+        if listTask.count > 0 {
             for index in 0 ..< listTask.count - 1 {
                 contents += listTask[index] + Constants.SeparateTaskComponent
             }
@@ -223,6 +223,7 @@ extension ViewController: RecorderViewDelegate {
         tableView.reloadData()
         hideRecoderView()
         saveData()
+        checkNumberOfTask()
     }
 }
 
