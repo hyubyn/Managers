@@ -21,7 +21,7 @@ class ViewController: UIViewController {
         table.register(UITableViewCell.self, forCellReuseIdentifier: "TableViewCell")
         table.allowsMultipleSelectionDuringEditing = false
         table.rowHeight = UITableViewAutomaticDimension         // this two lines make the height of uitableviewcell change dynamically
-        table.estimatedRowHeight = 50
+        table.estimatedRowHeight = 80
         return table
     }()
     
@@ -36,39 +36,128 @@ class ViewController: UIViewController {
         let button = UIButton()
         button.setImage(#imageLiteral(resourceName: "add_icon"), for: .normal)
         button.addTarget(self, action: #selector(showRecoderView), for: .touchUpInside)
-        button.layer.masksToBounds = true
+        button.backgroundColor = UIColor.red
+        button.layer.masksToBounds = false
         button.layer.cornerRadius = CGFloat(Constants.AddButtonHeight / 2)
         button.backgroundColor = UIColor.clear
+        button.layer.shadowColor = UIColor.black.withAlphaComponent(0.25).cgColor
+        button.layer.shadowOffset = CGSize.init(width: 0, height: 2.0)
         return button
     }()
     
+    lazy var leftBarButton: UIButton = {
+        let button = UIButton(frame: CGRect.init(x: 0, y: 0, width: 30, height: 30))
+        button.addTarget(self, action: #selector(changeLocale), for: .touchUpInside)
+        return button
+    }()
+    
+    lazy var rightBarButton: UIButton = {
+        let button = UIButton(frame: CGRect.init(x: 0, y: 0, width: 30, height: 30))
+        button.addTarget(self, action: #selector(clearAllTask), for: .touchUpInside)
+        button.setImage(#imageLiteral(resourceName: "completed"), for: .normal)
+        return button
+    }()
+    
+    lazy var noTaskLable: UILabel = {
+        let label = UILabel()
+        label.text = "No recent tasks"
+        label.textAlignment = .center
+        label.textColor = UIColor.brown.withAlphaComponent(0.5)
+        label.font = UIFont.systemFont(ofSize: 30)
+        label.numberOfLines = 2
+        return label
+    }()
+    
     var listTask = [String]()
+    var isUsingEnglish = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         setupView()
         
+        addObserver(listTask as! NSMutableArray, forKeyPath: #keyPath(listTask), options: [.new, .old], context: nil)
+        
     }
     
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        print(keyPath ?? "count change")
+    }
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationItem.title = "Your Saved Tasks"
-        navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName: UIColor.red]
+        navigationItem.title = Constants.MainTitle
+        navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName: UIColor.white]
         loadData()
+        isUsingEnglish = UserDefaults.standard.bool(forKey: Constants.SavedLocaledKey)
+        changeLocale()
     }
     
+    //clear all recent tasks
+    func clearAllTask() {
+        let alert = UIAlertController(title: "Clear All Task", message: "Did you complete all task? Press Clear to clear all recent tasks.\nIf not, swipe left each task to mark it as completed", preferredStyle: .alert)
+        
+        let okAction = UIAlertAction(title: "Clear", style: .default) { (_) in
+            if self.listTask.count == 0 { return }
+            self.listTask.removeAll()
+            self.tableView.reloadData()
+            self.saveData()
+            self.checkNumberOfTask()
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        
+        alert.addAction(okAction)
+        alert.addAction(cancelAction)
+        
+        present(alert, animated: true, completion: nil)
+    }
+    
+    // change locale
+    func changeLocale() {
+        // using Eng - change to VN
+        if !isUsingEnglish {
+            recoderView.setLocale(isUS: false)
+            leftBarButton.setImage(#imageLiteral(resourceName: "vn"), for: .normal)
+            UserDefaults.standard.set(isUsingEnglish, forKey: Constants.SavedLocaledKey)
+        } else {
+            recoderView.setLocale(isUS: true)
+            leftBarButton.setImage(#imageLiteral(resourceName: "us"), for: .normal)
+            UserDefaults.standard.set(isUsingEnglish, forKey: Constants.SavedLocaledKey)
+        }
+        isUsingEnglish = !isUsingEnglish
+    }
+    
+    // load saved task from local
     func loadData() {
         if let data = HFileManager.shared.readData(from: Constants.SavedFileName) {
-            let str = String(data: data, encoding: String.Encoding.utf8)
-            listTask = (str?.components(separatedBy: Constants.SeparateTaskComponent))!
+            if let str = String(data: data, encoding: String.Encoding.utf8) {
+                listTask = (str.components(separatedBy: Constants.SeparateTaskComponent)).filter{$0 != ""}
+                checkNumberOfTask()
+            }
         }
         
     }
     
+    // check number of task to show no task label 
+    func checkNumberOfTask() {
+        if listTask.count == 0 {
+            noTaskLable.isHidden = false
+            navigationItem.title = Constants.MainTitle2
+        } else {
+            navigationItem.title = Constants.MainTitle
+            noTaskLable.isHidden = true
+        }
+    }
+    
+    // setup view components
     func setupView() {
         
+        navigationItem.leftBarButtonItem = UIBarButtonItem(customView: leftBarButton)
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: rightBarButton)
+        navigationController?.navigationBar.barTintColor = Constants.ThemeColor
+        
         view.addSubview(tableView)
+        view.addSubview(noTaskLable)
         view.addSubview(addButton)
         view.addSubview(recoderView)
         
@@ -84,13 +173,17 @@ class ViewController: UIViewController {
         recoderView.snp.makeConstraints { (maker) in
             maker.edges.equalTo(0)
         }
-        
+     
+        noTaskLable.snp.makeConstraints { (maker) in
+            maker.edges.equalTo(tableView)
+        }
     }
     
     func showRecoderView() {
         recoderView.isHidden = false
         UIView.animate(withDuration: 0.5, animations: {
             self.recoderView.alpha = 1
+            self.recoderView.textView.text = ""
         })
     }
     
@@ -102,13 +195,21 @@ class ViewController: UIViewController {
         }
     }
     
+    // save data to file, in case clear all tasks - contents will be an empty string
     func saveData() {
         var contents = ""
-        for index in 0 ..< listTask.count - 1 {
-            contents += listTask[index] + Constants.SeparateTaskComponent
+        
+        if listTask.count > 1 {
+            for index in 0 ..< listTask.count - 1 {
+                contents += listTask[index] + Constants.SeparateTaskComponent
+            }
+            contents += listTask[listTask.count - 1]
+            _ = HFileManager.shared.writeData(input: contents, to: Constants.SavedFileName)
+        } else {
+            _ = HFileManager.shared.writeString(contents: contents, to: Constants.SavedFileName)
         }
-        contents += listTask[listTask.count - 1]
-        _ = HFileManager.shared.writeData(input: contents, to: Constants.SavedFileName)
+        
+        
     }
 }
 
@@ -136,7 +237,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
-        return "Completed"
+        return Constants.CompletedLabelName
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -153,7 +254,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             label.textAlignment = .center
             cell.addSubview(label)
             label.snp.makeConstraints({ (maker) in
-                maker.edges.equalTo(0).inset(5)
+                maker.edges.equalTo(0).inset(10)
             })
         }
         cell.preservesSuperviewLayoutMargins = false // this three lines make the separate line between row to be drawn from beggining to the end
@@ -172,6 +273,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
             listTask.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .automatic)
             saveData()
+            checkNumberOfTask()
         }
     }
 }
@@ -180,4 +282,8 @@ extension Constants {
     static let AddButtonHeight = 64
     static let SeparateTaskComponent = "Hyubyn"
     static let SavedFileName = "Hyubyn.info"
+    static let CompletedLabelName = "Completed"
+    static let MainTitle = "Your Saved Tasks"
+    static let MainTitle2 = "Add New Task"
+    static let SavedLocaledKey = "SavedLocaleKey"
 }

@@ -68,7 +68,7 @@ class RecorderView: UIView {
     
     var delegate: RecorderViewDelegate?
     
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale.init(identifier: "en-US"))
+    private var speechRecognizer = SFSpeechRecognizer(locale: Locale.init(identifier: Constants.ENLocaleIdentifier))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
@@ -83,6 +83,16 @@ class RecorderView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // set locale for Speech
+    func setLocale(isUS: Bool) {
+        if isUS {
+            speechRecognizer = SFSpeechRecognizer(locale: Locale.init(identifier: Constants.ENLocaleIdentifier))
+        } else {
+            speechRecognizer = SFSpeechRecognizer(locale: Locale.init(identifier: Constants.VNLocaleIdentifier))
+        }
+    }
+    
+    // setup view components
     func setupView() {
         
         backgroundColor = UIColor.clear
@@ -242,9 +252,9 @@ class RecorderView: UIView {
             recordButton.isEnabled = false
             recordButton.setTitle(Constants.RecordButtonTitle, for: .normal)
             if let text = textView.text, textView.text.characters.count > 0 {
+                textView.text = ""
                 delegate?.didRecordTask(task: text)
             }
-            textView.text = ""
         } else {
             startRecording()
             recordButton.setTitle(Constants.SaveButtonTitle, for: .normal)
@@ -272,7 +282,12 @@ extension RecorderView: SFSpeechRecognizerDelegate {
 }
 
 extension RecorderView: UITextViewDelegate {
-    func textView(textView: UITextView, shouldChangeTextInRange range: NSRange, replacementText text: String) -> Bool {
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        startRecording()
+        recordButton.setTitle(Constants.SaveButtonTitle, for: .normal)
+    }
+    
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if(text == "\n") {
             textView.resignFirstResponder()
             return false
@@ -289,4 +304,6 @@ class Constants {
     static let InfoLabelRecordingText = "Recording..."
     static let RecordButtonTitle = "Start Record"
     static let SaveButtonTitle = "Stop and Save"
+    static let VNLocaleIdentifier = "vi-VN"
+    static let ENLocaleIdentifier = "en-US"
 }

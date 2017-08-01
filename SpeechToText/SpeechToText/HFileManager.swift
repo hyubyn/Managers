@@ -133,11 +133,6 @@ class HFileManager {
      return: true if write successed, false if write failed
      */
     func writeString(contents: String,to fileName: String) -> Bool {
-        if !checkFileExist(fileName: getFilePath(fileName: fileName)) {
-            print("File does not exist create new file")
-            fileManager.createFile(atPath: getFilePath(fileName: fileName), contents: contents.data(using: String.Encoding.utf8), attributes: nil)
-            return true
-        }
         do {
             // Write contents to file
             try contents.write(toFile: getFilePath(fileName: fileName), atomically: false, encoding: String.Encoding.utf8)
