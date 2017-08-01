@@ -39,9 +39,9 @@ class ViewController: UIViewController {
         button.layer.cornerRadius = CGFloat(Constants.AddButtonHeight / 2)
         button.layer.masksToBounds = false;
         button.layer.shadowColor = UIColor.black.cgColor;
-        button.layer.shadowOpacity = 0.45;
-        button.layer.shadowRadius = CGFloat(10);
-        button.layer.shadowOffset = CGSize(width: 2, height: 2)
+        button.layer.shadowOpacity = 0.4;
+        button.layer.shadowRadius = CGFloat(5);
+        button.layer.shadowOffset = CGSize(width: 0, height: 0)
         return button
     }()
     
@@ -94,6 +94,7 @@ class ViewController: UIViewController {
     
     //clear all recent tasks
     func clearAllTask() {
+        if recoderView.isHidden == false { return }
         let alert = UIAlertController(title: "Clear All Task", message: "Did you complete all task? Press Clear to clear all recent tasks.\nIf not, swipe left each task to mark it as completed", preferredStyle: .alert)
         
         let okAction = UIAlertAction(title: "Clear", style: .default) { (_) in
