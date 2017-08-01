@@ -30,6 +30,7 @@ class RecorderView: UIView {
     
     lazy var textView: UITextView = {
         let textView = UITextView()
+        textView.font = UIFont.systemFont(ofSize: 18)
         textView.layer.borderWidth = 0.5
         textView.layer.borderColor = UIColor.green.withAlphaComponent(0.8).cgColor
         textView.delegate = self
